@@ -1,10 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const fetch = require('node-fetch'); // npm install node-fetch
+const cors = require('cors'); // npm install cors
+
 const app = express();
 const PORT = 3000;
 
 app.use(bodyParser.json());
+app.use(cors());
 app.use(express.static(__dirname)); // serve index.html
 
 let codes = {}; // store email -> code
@@ -29,7 +32,7 @@ app.post('/send-code', (req, res) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: `User ${email} received the email.` })
-    });
+    }).catch(console.error);
 
     res.json({ success: true });
 });
@@ -43,7 +46,8 @@ app.post('/verify-code', async (req, res) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ content: `User ${email} verified the code!` })
-        });
+        }).catch(console.error);
+
         delete codes[email];
         res.json({ success: true });
     } else {
