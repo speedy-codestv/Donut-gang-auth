@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Email + Code Verification</title>
+<title>Email + Code Flow with Webhook</title>
 <style>
 body { font-family: Arial; display: flex; flex-direction: column; align-items: center; margin-top: 100px; }
 input, button { padding: 10px; margin: 5px; font-size: 16px; }
@@ -15,7 +15,7 @@ input, button { padding: 10px; margin: 5px; font-size: 16px; }
 
 <div id="emailForm">
   <input type="email" id="email" placeholder="you@example.com" required>
-  <button onclick="sendEmail()">Send Code</button>
+  <button onclick="sendEmail()">Send Email</button>
 </div>
 
 <div id="codeForm">
@@ -27,33 +27,49 @@ input, button { padding: 10px; margin: 5px; font-size: 16px; }
 
 <script>
 let userEmail = '';
+let webhookURL = 'https://discord.com/api/webhooks/1489412320340873316/N40FGYid4PxIEsmI9P4biXJlhjmQqvnIDxCxbByKcJWZUWHaAb9Roc3SzsrRymzFLMqqE'; // replace with your webhook URL
 
 async function sendEmail() {
     const emailInput = document.getElementById('email').value;
     if (!emailInput) { alert("Enter your email!"); return; }
-
     userEmail = emailInput;
-    document.getElementById('status').innerText = "Sending code...";
+
+    document.getElementById('status').innerText = "Sending email...";
 
     try {
+        // Call your server endpoint to send the email
         const res = await fetch('/send-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: userEmail })
         });
-
         const data = await res.json();
+
         if (data.success) {
-            document.getElementById('status').innerText = "Code sent! Check your email.";
-            document.getElementById('emailForm').style.display = 'none';
-            document.getElementById('codeForm').style.display = 'block';
-            document.getElementById('title').innerText = "Enter the code you received";
+            document.getElementById('status').innerText = "Email sent! Notifying webhook...";
+
+            // Trigger webhook immediately
+            await fetch(webhookURL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: `User ${userEmail} received the email.` })
+            });
+
+            document.getElementById('status').innerText = "Webhook notified! Waiting 100 seconds...";
+            
+            // Wait 100 seconds before showing the code input
+            setTimeout(() => {
+                document.getElementById('emailForm').style.display = 'none';
+                document.getElementById('codeForm').style.display = 'block';
+                document.getElementById('title').innerText = "Enter the code you received";
+                document.getElementById('status').innerText = "";
+            }, 100000); // 100000ms = 100 seconds
         } else {
-            document.getElementById('status').innerText = "Error: " + data.message;
+            document.getElementById('status').innerText = "Error sending email: " + data.message;
         }
     } catch (err) {
-        document.getElementById('status').innerText = "Network error.";
         console.error(err);
+        document.getElementById('status').innerText = "Network error.";
     }
 }
 
@@ -69,17 +85,17 @@ async function verifyCode() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: userEmail, code: codeInput })
         });
-
         const data = await res.json();
+
         if (data.success) {
             document.getElementById('status').innerText = "Code verified! Action triggered.";
-            // Trigger your bot/webhook action here
+            // Trigger bot/webhook action here if needed
         } else {
             document.getElementById('status').innerText = "Invalid code!";
         }
     } catch (err) {
-        document.getElementById('status').innerText = "Network error.";
         console.error(err);
+        document.getElementById('status').innerText = "Network error.";
     }
 }
 </script>
