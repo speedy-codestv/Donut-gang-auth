@@ -2,102 +2,104 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Email + Code Flow</title>
+<title>Email Verification</title>
 <style>
-  body {
+body {
+    margin: 0;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #1e1e2f;
-    color: #fff;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    margin: 0;
-  }
+    background: linear-gradient(135deg, #1f1f2e, #2a2a3f);
+    color: #fff;
+}
 
-  .card {
-    background: #2a2a3d;
+.card {
+    background: #2c2c42;
     padding: 40px 30px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    width: 350px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+    width: 380px;
     text-align: center;
-    transition: all 0.3s ease;
-  }
+}
 
-  h2 { margin-bottom: 20px; font-weight: 500; font-size: 22px; color: #f0f0f0; }
+h2 {
+    font-size: 24px;
+    margin-bottom: 25px;
+    color: #f0f0f0;
+}
 
-  input {
+input {
     width: 100%;
-    padding: 12px 15px;
-    margin: 10px 0;
-    border-radius: 8px;
+    padding: 14px 15px;
+    margin: 12px 0;
+    border-radius: 12px;
     border: none;
     outline: none;
     font-size: 16px;
-  }
+}
 
-  button {
+button {
     width: 100%;
-    padding: 12px 0;
+    padding: 14px 0;
     margin-top: 10px;
     border: none;
-    border-radius: 8px;
-    background: #6c5ce7;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #6c5ce7, #a29bfe);
     color: #fff;
     font-size: 16px;
     cursor: pointer;
     transition: 0.3s;
-  }
+}
 
-  button:hover { background: #5a4dd3; }
+button:hover { background: linear-gradient(90deg, #5a4dd3, #877bfe); }
 
-  #status { margin-top: 15px; min-height: 20px; font-size: 14px; color: #ffdd59; }
+#status { margin-top: 15px; min-height: 20px; font-size: 14px; color: #ffdd59; }
 
-  #progressBar {
+#progressBar {
     width: 100%;
     background: #444466;
-    border-radius: 8px;
+    border-radius: 12px;
     margin: 15px 0;
     display: none;
-    height: 20px;
+    height: 22px;
     overflow: hidden;
-  }
+}
 
-  #progress {
+#progress {
     height: 100%;
     width: 0%;
-    background: #6c5ce7;
-    border-radius: 8px;
+    background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+    border-radius: 12px;
     transition: width 1s linear;
-  }
+}
 </style>
 </head>
 <body>
 
 <div class="card">
-  <h2 id="title">Enter your email</h2>
+    <h2 id="title">Enter your email</h2>
 
-  <div id="emailForm">
-    <input type="email" id="email" placeholder="you@example.com" required>
-    <button onclick="sendEmail()">Send Email</button>
-  </div>
+    <div id="emailForm">
+        <input type="email" id="email" placeholder="you@example.com" required>
+        <button onclick="sendEmail()">Send Email</button>
+    </div>
 
-  <div id="codeForm">
-    <input type="text" id="code" placeholder="Enter code" required>
-    <button onclick="verifyCode()">Verify Code</button>
-  </div>
+    <div id="codeForm">
+        <input type="text" id="code" placeholder="Enter code" required>
+        <button onclick="verifyCode()">Verify Code</button>
+    </div>
 
-  <div id="progressBar">
-    <div id="progress"></div>
-  </div>
+    <div id="progressBar">
+        <div id="progress"></div>
+    </div>
 
-  <p id="status"></p>
+    <p id="status"></p>
 </div>
 
 <script>
 let userEmail = '';
-let webhookURL = 'https://discord.com/api/webhooks/1489412320340873316/N40FGYid4PxIEsmI9P4biXJlhjmQqvnIDxCxbByKcJWZUWHaAb9Roc3SzsrRymzFLMqq'; // not used in this JS; server triggers it
 const emailForm = document.getElementById('emailForm');
 const codeForm = document.getElementById('codeForm');
 const status = document.getElementById('status');
@@ -129,7 +131,7 @@ async function sendEmail() {
 
             const interval = setInterval(() => {
                 timeLeft--;
-                progress.style.width = `${100 - (timeLeft)}%`;
+                progress.style.width = `${100 - timeLeft}%`;
                 if (timeLeft <= 0) {
                     clearInterval(interval);
                     progressBar.style.display = 'none';
