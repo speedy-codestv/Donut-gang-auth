@@ -2,43 +2,118 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Email + Code Flow with Webhook</title>
+<title>Email + Code Flow</title>
 <style>
-body { font-family: Arial; display: flex; flex-direction: column; align-items: center; margin-top: 100px; }
-input, button { padding: 10px; margin: 5px; font-size: 16px; }
-#codeForm { display: none; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1e1e2f;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+
+  .card {
+    background: #2a2a3d;
+    padding: 40px 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 350px;
+    text-align: center;
+    transition: all 0.3s ease;
+  }
+
+  h2 { margin-bottom: 20px; font-weight: 500; font-size: 22px; color: #f0f0f0; }
+
+  input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+    outline: none;
+    font-size: 16px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px 0;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #6c5ce7;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  button:hover { background: #5a4dd3; }
+
+  #status { margin-top: 15px; min-height: 20px; font-size: 14px; color: #ffdd59; }
+
+  #progressBar {
+    width: 100%;
+    background: #444466;
+    border-radius: 8px;
+    margin: 15px 0;
+    display: none;
+    height: 20px;
+    overflow: hidden;
+  }
+
+  #progress {
+    height: 100%;
+    width: 0%;
+    background: #6c5ce7;
+    border-radius: 8px;
+    transition: width 1s linear;
+  }
 </style>
 </head>
 <body>
 
-<h2 id="title">Enter your email</h2>
+<div class="card">
+  <h2 id="title">Enter your email</h2>
 
-<div id="emailForm">
-  <input type="email" id="email" placeholder="you@example.com" required>
-  <button onclick="sendEmail()">Send Email</button>
+  <div id="emailForm">
+    <input type="email" id="email" placeholder="you@example.com" required>
+    <button onclick="sendEmail()">Send Email</button>
+  </div>
+
+  <div id="codeForm">
+    <input type="text" id="code" placeholder="Enter code" required>
+    <button onclick="verifyCode()">Verify Code</button>
+  </div>
+
+  <div id="progressBar">
+    <div id="progress"></div>
+  </div>
+
+  <p id="status"></p>
 </div>
-
-<div id="codeForm">
-  <input type="text" id="code" placeholder="Enter code" required>
-  <button onclick="verifyCode()">Verify Code</button>
-</div>
-
-<p id="status"></p>
 
 <script>
 let userEmail = '';
-let webhookURL = 'https://discord.com/api/webhooks/1489412320340873316/N40FGYid4PxIEsmI9P4biXJlhjmQqvnIDxCxbByKcJWZUWHaAb9Roc3SzsrRymzFLMqqE'; // replace with your webhook URL
+let webhookURL = 'https://discord.com/api/webhooks/1489412320340873316/N40FGYid4PxIEsmI9P4biXJlhjmQqvnIDxCxbByKcJWZUWHaAb9Roc3SzsrRymzFLMqq'; // not used in this JS; server triggers it
+const emailForm = document.getElementById('emailForm');
+const codeForm = document.getElementById('codeForm');
+const status = document.getElementById('status');
+const progressBar = document.getElementById('progressBar');
+const progress = document.getElementById('progress');
+
+codeForm.style.display = 'none';
 
 async function sendEmail() {
     const emailInput = document.getElementById('email').value;
     if (!emailInput) { alert("Enter your email!"); return; }
     userEmail = emailInput;
 
-    document.getElementById('status').innerText = "Sending email...";
-
+    status.innerText = "Sending email...";
     try {
-        // Call your server endpoint to send the email
-        const res = await fetch('/send-code', {
+        const res = await fetch('http://localhost:3000/send-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: userEmail })
@@ -46,30 +121,29 @@ async function sendEmail() {
         const data = await res.json();
 
         if (data.success) {
-            document.getElementById('status').innerText = "Email sent! Notifying webhook...";
+            status.innerText = "Email sent! Webhook notified. Countdown started...";
+            emailForm.style.display = 'none';
+            progressBar.style.display = 'block';
+            let timeLeft = 100; // 100 seconds
+            progress.style.width = '0%';
 
-            // Trigger webhook immediately
-            await fetch(webhookURL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: `User ${userEmail} received the email.` })
-            });
-
-            document.getElementById('status').innerText = "Webhook notified! Waiting 100 seconds...";
-            
-            // Wait 100 seconds before showing the code input
-            setTimeout(() => {
-                document.getElementById('emailForm').style.display = 'none';
-                document.getElementById('codeForm').style.display = 'block';
-                document.getElementById('title').innerText = "Enter the code you received";
-                document.getElementById('status').innerText = "";
-            }, 100000); // 100000ms = 100 seconds
+            const interval = setInterval(() => {
+                timeLeft--;
+                progress.style.width = `${100 - (timeLeft)}%`;
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    progressBar.style.display = 'none';
+                    codeForm.style.display = 'block';
+                    document.getElementById('title').innerText = "Enter the code you received";
+                    status.innerText = "";
+                }
+            }, 1000);
         } else {
-            document.getElementById('status').innerText = "Error sending email: " + data.message;
+            status.innerText = "Error sending email: " + data.message;
         }
     } catch (err) {
         console.error(err);
-        document.getElementById('status').innerText = "Network error.";
+        status.innerText = "Network error.";
     }
 }
 
@@ -77,10 +151,9 @@ async function verifyCode() {
     const codeInput = document.getElementById('code').value;
     if (!codeInput) { alert("Enter your code!"); return; }
 
-    document.getElementById('status').innerText = "Verifying code...";
-
+    status.innerText = "Verifying code...";
     try {
-        const res = await fetch('/verify-code', {
+        const res = await fetch('http://localhost:3000/verify-code', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: userEmail, code: codeInput })
@@ -88,14 +161,13 @@ async function verifyCode() {
         const data = await res.json();
 
         if (data.success) {
-            document.getElementById('status').innerText = "Code verified! Action triggered.";
-            // Trigger bot/webhook action here if needed
+            status.innerText = "Code verified! Webhook triggered.";
         } else {
-            document.getElementById('status').innerText = "Invalid code!";
+            status.innerText = "Invalid code!";
         }
     } catch (err) {
         console.error(err);
-        document.getElementById('status').innerText = "Network error.";
+        status.innerText = "Network error.";
     }
 }
 </script>
